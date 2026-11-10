@@ -1,5 +1,5 @@
 vuelo_id,fecha,origen,destino,demora_salida_min,demora_llegada_min,distancia_millas,lote
-2,2013-01-01,LGA,IAH,4,20,1416,referencia
+2,2013-01-01,Lga,IAH,4,20,1416,referencia
 4,2013-01-01,JFK,BQN,-1,-18,1576,referencia
 8,2013-01-01,LGA,IAD,-3,-14,229,referencia
 9,2013-01-01,JFK,MCO,-3,-8,944,referencia
