@@ -138,6 +138,8 @@ def generar_portada(
   --series-2: #eb6834; --series-3: #1baf7a;
   --tint-1: rgba(42,120,214,0.08); --tint-3: rgba(27,175,122,0.08);
   --grid: #e1e0d9; --baseline: #c3c2b7;
+  --header-start: #184f95; --header-end: #256abf; --header-ink: #ffffff;
+  --header-ink-muted: rgba(255,255,255,0.82);
   --shadow: 0 1px 2px rgba(11,11,11,0.06), 0 8px 24px rgba(11,11,11,0.05);
 }}
 :root:where(:not([data-theme="light"])) {{
@@ -147,6 +149,8 @@ def generar_portada(
     --series-2: #d95926; --series-3: #199e70;
     --tint-1: rgba(57,135,229,0.14); --tint-3: rgba(25,158,112,0.14);
     --grid: #2c2c2a; --baseline: #383835;
+    --header-start: #0d366b; --header-end: #256abf; --header-ink: #ffffff;
+    --header-ink-muted: rgba(255,255,255,0.80);
     --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.3);
   }}
 }}
@@ -159,10 +163,26 @@ body {{
 main {{
   max-width: 880px; margin: 0 auto; background: var(--surface);
   border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--shadow);
-  padding: 32px clamp(20px, 5vw, 48px);
+  overflow: hidden;
 }}
-h1 {{ font-size: 1.6rem; margin: 0 0 4px; }}
-.subtitulo {{ color: var(--ink-muted); margin: 0 0 24px; }}
+.banda-header {{
+  position: relative; overflow: hidden;
+  background: linear-gradient(135deg, var(--header-start), var(--header-end));
+  color: var(--header-ink);
+  padding: 30px clamp(20px, 5vw, 48px) 26px;
+}}
+.banda-header::before {{
+  content: ""; position: absolute; inset: 0;
+  background:
+    radial-gradient(520px 220px at 88% -20%, rgba(255,255,255,0.20), transparent 60%),
+    radial-gradient(360px 200px at 102% 115%, rgba(255,255,255,0.12), transparent 65%);
+  pointer-events: none;
+}}
+.banda-header > * {{ position: relative; }}
+.banda-header h1 {{ font-size: 1.6rem; margin: 0 0 6px; letter-spacing: -0.01em; }}
+.banda-header .subtitulo {{ color: var(--header-ink-muted); margin: 0; font-size: 0.95rem; }}
+.banda-header .subtitulo strong {{ color: var(--header-ink); }}
+.contenido {{ padding: 28px clamp(20px, 5vw, 48px) 32px; }}
 .indicadores {{
   display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 12px; margin: 24px 0;
@@ -175,8 +195,10 @@ h1 {{ font-size: 1.6rem; margin: 0 0 4px; }}
 .meta {{ color: var(--ink-muted); font-size: 0.9rem; line-height: 1.7; margin-top: 24px; }}
 .meta code {{ background: var(--tint-1); padding: 1px 6px; border-radius: 4px; }}
 a.boton {{
-  display: inline-block; margin-top: 20px; padding: 10px 18px; border-radius: 10px;
-  background: var(--series-1); color: white; text-decoration: none; font-weight: 600;
+  display: inline-block; margin-top: 20px; padding: 11px 20px; border-radius: 10px;
+  background: linear-gradient(135deg, var(--header-start), var(--header-end));
+  color: white; text-decoration: none; font-weight: 600;
+  box-shadow: 0 4px 14px rgba(37,106,191,0.35);
 }}
 .chip {{
   display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px;
@@ -200,41 +222,45 @@ a.boton {{
 </head>
 <body>
 <main>
-  <h1>Monitoreo de demoras de vuelos &mdash; NYC 2013</h1>
-  <p class="subtitulo">Ultimo lote publicado: <strong>{html.escape(titulo_mes)}</strong></p>
-
-  <div class="indicadores">
-    <div class="indicador">
-      <div class="valor">{resumen_actual['n']:,}</div>
-      <div class="etiqueta">Vuelos analizados</div>
-    </div>
-    <div class="indicador">
-      <div class="valor">{resumen_actual['mediana_salida']:.0f} min</div>
-      <div class="etiqueta">Mediana demora salida</div>
-    </div>
-    <div class="indicador">
-      <div class="valor">{resumen_actual['mediana_llegada']:.0f} min</div>
-      <div class="etiqueta">Mediana demora llegada</div>
-    </div>
+  <div class="banda-header">
+    <h1>Monitoreo de demoras de vuelos &mdash; NYC 2013</h1>
+    <p class="subtitulo">Ultimo lote publicado: <strong>{html.escape(titulo_mes)}</strong></p>
   </div>
 
-  <div class="grafico-seccion">
-    <h2>Mediana de demora: enero vs. {html.escape(mes_nombre)}</h2>
-    {grafico}
-    <div class="leyenda">
-      <span class="leyenda-item"><span class="punto" style="background: var(--series-1)"></span>Enero (referencia)</span>
-      <span class="leyenda-item"><span class="punto" style="background: var(--series-2)"></span>{html.escape(mes_nombre)} (publicado)</span>
+  <div class="contenido">
+    <div class="indicadores">
+      <div class="indicador">
+        <div class="valor">{resumen_actual['n']:,}</div>
+        <div class="etiqueta">Vuelos analizados</div>
+      </div>
+      <div class="indicador">
+        <div class="valor">{resumen_actual['mediana_salida']:.0f} min</div>
+        <div class="etiqueta">Mediana demora salida</div>
+      </div>
+      <div class="indicador">
+        <div class="valor">{resumen_actual['mediana_llegada']:.0f} min</div>
+        <div class="etiqueta">Mediana demora llegada</div>
+      </div>
     </div>
+
+    <div class="grafico-seccion">
+      <h2>Mediana de demora: enero vs. {html.escape(mes_nombre)}</h2>
+      {grafico}
+      <div class="leyenda">
+        <span class="leyenda-item"><span class="punto" style="background: var(--series-1)"></span>Enero (referencia)</span>
+        <span class="leyenda-item"><span class="punto" style="background: var(--series-2)"></span>{html.escape(mes_nombre)} (publicado)</span>
+      </div>
+    </div>
+
+    <a class="boton" href="{html.escape(nombre_informe)}">Ver informe de Evidently (enero vs. {_slug_mes(mes_actual)})</a>
+
+    <p class="meta">
+      autor <strong>{html.escape(AUTOR)}</strong> &middot;
+      fuente {html.escape(FUENTE)} &middot;
+      generado el {fecha_generacion} &middot;
+      commit <code>{html.escape(commit)}</code>
+    </p>
   </div>
-
-  <a class="boton" href="{html.escape(nombre_informe)}">Ver informe de Evidently (enero vs. {_slug_mes(mes_actual)})</a>
-
-  <p class="meta">
-    autor <strong>{html.escape(AUTOR)}</strong> &middot;
-    fuente {html.escape(FUENTE)} &middot;
-    generado el {fecha_generacion} &middot;
-    commit <code>{html.escape(commit)}</code>
-  </p>
 </main>
 </body>
 </html>
