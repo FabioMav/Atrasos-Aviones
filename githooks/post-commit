@@ -1,0 +1,17 @@
+#!/bin/sh
+# Hook opcional: despues de cada commit, intenta hacer push automaticamente.
+# Para activarlo una sola vez en el repo: git config core.hooksPath githooks
+#
+# Si el push falla (por ejemplo, sin conexion o sin permisos), el commit ya
+# quedo guardado igual: este hook solo avisa, nunca bloquea el commit.
+
+rama=$(git rev-parse --abbrev-ref HEAD)
+
+if git push origin "$rama" 2>/tmp/post-commit-push.log; then
+  echo "post-commit: push a origin/$rama realizado con exito."
+else
+  echo "post-commit: no se pudo hacer push automatico (ver /tmp/post-commit-push.log)."
+  echo "post-commit: el commit local se guardo igual; podes hacer 'git push' manualmente."
+fi
+
+exit 0
