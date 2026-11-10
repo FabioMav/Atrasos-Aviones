@@ -1,5 +1,5 @@
 vuelo_id,fecha,origen,destino,demora_salida_min,demora_llegada_min,distancia_millas,lote
-111297,2013-02-01,Ewe,CLT,-4,4,529,control
+111297,2013-02-01,EWR,CLT,-4,4,529,control
 111298,2013-02-01,EWR,IAH,-5,-4,1400,control
 111300,2013-02-01,JFK,BQN,-8,-10,1576,control
 111303,2013-02-01,LGA,DFW,-8,9,1389,control
