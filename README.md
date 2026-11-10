@@ -123,8 +123,9 @@ donde `<mes>` es `febrero` o `julio` según el lote que tenga `actual.csv` en
 ese momento. La portada muestra el último mes publicado, el número de
 vuelos analizados, la mediana de cada demora, la fecha de generación, el
 commit (toma `GITHUB_SHA` cuando corre en Actions, o `local` si lo corrés
-en tu máquina), el autor, la fuente de los datos y un botón que enlaza al
-informe correcto.
+en tu máquina), el autor, la fuente de los datos, un pequeño gráfico de
+barras (enero vs. el mes publicado, para cada tipo de demora) y un botón
+que enlaza al informe completo de Evidently.
 
 ## Estructura del repositorio
 

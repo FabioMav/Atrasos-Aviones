@@ -60,9 +60,62 @@ def calcular_drift(ruta_referencia, ruta_actual):
     return snapshot
 
 
+def _grafico_comparacion(mes_actual_nombre, resumen_referencia, resumen_actual):
+    """SVG de barras agrupadas: mediana de cada demora, enero vs. el mes
+    publicado. Los valores pueden ser negativos (el vuelo llego/salio antes
+    de lo previsto), asi que las barras parten de una linea base en cero.
+    """
+    grupos = [
+        ("Demora de salida", resumen_referencia["mediana_salida"], resumen_actual["mediana_salida"]),
+        ("Demora de llegada", resumen_referencia["mediana_llegada"], resumen_actual["mediana_llegada"]),
+    ]
+
+    ancho, alto_plot, alto_etiquetas = 460, 130, 34
+    alto_total = alto_plot + alto_etiquetas
+    margen = 20
+    y_cero = alto_plot / 2
+    max_abs = max(3.0, max(abs(v) for _, ref, act in grupos for v in (ref, act)) * 1.35)
+    escala = (alto_plot / 2 - 20) / max_abs
+
+    ancho_barra, separacion = 32, 10
+    ancho_grupo = (ancho - 2 * margen) / len(grupos)
+
+    piezas = [f'<line x1="{margen}" y1="{y_cero:.1f}" x2="{ancho - margen}" y2="{y_cero:.1f}" class="linea-base" />']
+
+    for i, (nombre, v_ref, v_act) in enumerate(grupos):
+        centro = margen + ancho_grupo * i + ancho_grupo / 2
+        for x_offset, valor, serie in (
+            (-separacion / 2 - ancho_barra, v_ref, "serie-1"),
+            (separacion / 2, v_act, "serie-2"),
+        ):
+            x = centro + x_offset
+            alto_barra = max(abs(valor) * escala, 1)
+            y = y_cero - alto_barra if valor >= 0 else y_cero
+            y_etiqueta = (y - 6) if valor >= 0 else (y + alto_barra + 14)
+            piezas.append(
+                f'<rect x="{x:.1f}" y="{y:.1f}" width="{ancho_barra}" height="{alto_barra:.1f}" '
+                f'rx="4" class="barra {serie}"><title>{html.escape(nombre)}: {valor:.0f} min</title></rect>'
+            )
+            piezas.append(
+                f'<text x="{x + ancho_barra / 2:.1f}" y="{y_etiqueta:.1f}" '
+                f'text-anchor="middle" class="valor-barra">{valor:.0f}</text>'
+            )
+        piezas.append(
+            f'<text x="{centro:.1f}" y="{alto_plot + 20}" text-anchor="middle" '
+            f'class="etiqueta-grupo">{html.escape(nombre)}</text>'
+        )
+
+    svg_interior = "\n    ".join(piezas)
+    return f"""<svg viewBox="0 0 {ancho} {alto_total}" role="img"
+    aria-label="Comparacion de medianas de demora entre enero y {html.escape(mes_actual_nombre)}">
+    {svg_interior}
+  </svg>"""
+
+
 def generar_portada(
     anio_actual,
     mes_actual,
+    resumen_referencia,
     resumen_actual,
     nombre_informe,
     commit,
@@ -70,6 +123,7 @@ def generar_portada(
 ):
     mes_nombre = _slug_mes(mes_actual).capitalize()
     titulo_mes = f"{mes_nombre} {anio_actual}"
+    grafico = _grafico_comparacion(_slug_mes(mes_actual), resumen_referencia, resumen_actual)
 
     return f"""<!doctype html>
 <html lang="es">
@@ -81,14 +135,18 @@ def generar_portada(
 :root {{
   --page: #f9f9f7; --surface: #fcfcfb; --ink: #0b0b0b; --ink-2: #33322f;
   --ink-muted: #6b6b66; --border: rgba(11,11,11,0.10); --series-1: #2a78d6;
-  --series-3: #1baf7a; --tint-1: rgba(42,120,214,0.08); --tint-3: rgba(27,175,122,0.08);
+  --series-2: #eb6834; --series-3: #1baf7a;
+  --tint-1: rgba(42,120,214,0.08); --tint-3: rgba(27,175,122,0.08);
+  --grid: #e1e0d9; --baseline: #c3c2b7;
   --shadow: 0 1px 2px rgba(11,11,11,0.06), 0 8px 24px rgba(11,11,11,0.05);
 }}
 :root:where(:not([data-theme="light"])) {{
   @media (prefers-color-scheme: dark) {{
     --page: #0d0d0d; --surface: #1a1a19; --ink: #f0efec; --ink-2: #d7d5cf;
     --ink-muted: #9a988f; --border: rgba(255,255,255,0.10); --series-1: #3987e5;
-    --series-3: #199e70; --tint-1: rgba(57,135,229,0.14); --tint-3: rgba(25,158,112,0.14);
+    --series-2: #d95926; --series-3: #199e70;
+    --tint-1: rgba(57,135,229,0.14); --tint-3: rgba(25,158,112,0.14);
+    --grid: #2c2c2a; --baseline: #383835;
     --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.3);
   }}
 }}
@@ -127,6 +185,17 @@ a.boton {{
 .chip .punto {{ width: 8px; height: 8px; border-radius: 50%; }}
 .chip.ok {{ background: var(--tint-3); color: var(--series-3); }}
 .chip.ok .punto {{ background: var(--series-3); }}
+.grafico-seccion {{ margin: 28px 0 8px; }}
+.grafico-seccion h2 {{ font-size: 1rem; margin: 0 0 10px; color: var(--ink-2); }}
+.grafico-seccion svg {{ width: 100%; height: auto; max-width: 460px; display: block; }}
+.linea-base {{ stroke: var(--baseline); stroke-width: 1; }}
+.barra.serie-1 {{ fill: var(--series-1); }}
+.barra.serie-2 {{ fill: var(--series-2); }}
+.valor-barra {{ font-size: 11px; fill: var(--ink-2); font-variant-numeric: tabular-nums; }}
+.etiqueta-grupo {{ font-size: 11px; fill: var(--ink-muted); }}
+.leyenda {{ display: flex; gap: 18px; margin-top: 6px; font-size: 0.82rem; color: var(--ink-2); }}
+.leyenda-item {{ display: inline-flex; align-items: center; gap: 6px; }}
+.leyenda-item .punto {{ width: 10px; height: 10px; border-radius: 3px; }}
 </style>
 </head>
 <body>
@@ -149,6 +218,15 @@ a.boton {{
     </div>
   </div>
 
+  <div class="grafico-seccion">
+    <h2>Mediana de demora: enero vs. {html.escape(mes_nombre)}</h2>
+    {grafico}
+    <div class="leyenda">
+      <span class="leyenda-item"><span class="punto" style="background: var(--series-1)"></span>Enero (referencia)</span>
+      <span class="leyenda-item"><span class="punto" style="background: var(--series-2)"></span>{html.escape(mes_nombre)} (publicado)</span>
+    </div>
+  </div>
+
   <a class="boton" href="{html.escape(nombre_informe)}">Ver informe de Evidently (enero vs. {_slug_mes(mes_actual)})</a>
 
   <p class="meta">
@@ -167,6 +245,7 @@ def main():
     os.makedirs(CARPETA_SITIO, exist_ok=True)
 
     anio_actual, mes_actual = _mes_de(RUTA_ACTUAL)
+    resumen_referencia = resumen_lote(RUTA_REFERENCIA)
     resumen_actual = resumen_lote(RUTA_ACTUAL)
 
     nombre_informe = f"informe_enero_vs_{_slug_mes(mes_actual)}.html"
@@ -181,6 +260,7 @@ def main():
     portada = generar_portada(
         anio_actual=anio_actual,
         mes_actual=mes_actual,
+        resumen_referencia=resumen_referencia,
         resumen_actual=resumen_actual,
         nombre_informe=nombre_informe,
         commit=commit,
